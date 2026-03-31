@@ -19,7 +19,10 @@ const Header = () => {
       <div className="container mx-auto px-4 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
-          <Link to="/" className="font-heading text-title-lg md:text-headline-sm text-on-surface tracking-tight font-bold">
+          <Link
+            to="/"
+            className="font-heading text-title-lg md:text-headline-sm text-on-surface tracking-tight font-bold"
+          >
             Heritage Store
           </Link>
 
@@ -69,18 +72,23 @@ const Header = () => {
                 2
               </span>
             </Link>
-            <button
+            <Link
+              to="/profile"
               className="hidden md:flex p-2 rounded-md hover:bg-surface-container-low transition-colors"
               aria-label="Account"
             >
               <User className="w-5 h-5 text-on-surface" />
-            </button>
+            </Link>
             <button
               className="md:hidden p-2 rounded-md hover:bg-surface-container-low transition-colors"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Menu"
             >
-              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileOpen ? (
+                <X className="w-5 h-5" />
+              ) : (
+                <Menu className="w-5 h-5" />
+              )}
             </button>
           </div>
         </div>
@@ -121,6 +129,13 @@ const Header = () => {
               className="font-heading text-title-sm py-2 text-on-surface hover:text-primary transition-colors"
             >
               OUR STORY
+            </Link>
+            <Link
+              to="/profile"
+              onClick={() => setMobileOpen(false)}
+              className="font-heading text-title-sm py-2 text-on-surface hover:text-primary transition-colors"
+            >
+              MY ACCOUNT
             </Link>
           </nav>
         </div>
