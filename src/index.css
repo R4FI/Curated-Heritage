@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import '@fontsource/manrope/400.css';
+@import '@fontsource/manrope/500.css';
+@import '@fontsource/manrope/600.css';
+@import '@fontsource/manrope/700.css';
+@import '@fontsource/manrope/800.css';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+
+@layer base {
+  :root {
+    /* Primary Teal */
+    --primary: 163 100% 16%;
+    --primary-foreground: 0 0% 100%;
+    --primary-container: 163 100% 21%;
+
+    /* Secondary */
+    --secondary: 155 42% 85%;
+    --secondary-foreground: 161 17% 35%;
+
+    /* Tertiary (Sale/Urgency) */
+    --tertiary: 13 47% 31%;
+    --tertiary-foreground: 0 0% 100%;
+
+    /* Surfaces */
+    --background: 120 18% 97%;
+    --foreground: 170 8% 15%;
+    --surface: 120 18% 97%;
+    --surface-bright: 120 12% 95%;
+    --surface-container-lowest: 0 0% 100%;
+    --surface-container-low: 120 12% 95%;
+    --surface-container: 140 8% 93%;
+    --surface-container-high: 140 5% 91%;
+
+    /* On Surface */
+    --on-surface: 170 8% 15%;
+    --on-surface-variant: 160 6% 42%;
+
+    /* Outline */
+    --outline-variant: 156 7% 76%;
+
+    /* Semantic mappings */
+    --card: 0 0% 100%;
+    --card-foreground: 170 8% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 170 8% 15%;
+    --muted: 120 12% 95%;
+    --muted-foreground: 160 6% 42%;
+    --accent: 155 42% 85%;
+    --accent-foreground: 161 17% 35%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 156 7% 76%;
+    --input: 140 5% 91%;
+    --ring: 163 100% 16%;
+    --radius: 0.75rem;
+
+    --sidebar-background: 120 12% 95%;
+    --sidebar-foreground: 170 8% 15%;
+    --sidebar-primary: 163 100% 16%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 155 42% 85%;
+    --sidebar-accent-foreground: 161 17% 35%;
+    --sidebar-border: 156 7% 76%;
+    --sidebar-ring: 163 100% 16%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
+
+/* Ambient shadow utility */
+.shadow-ambient {
+  box-shadow: 0 20px 40px rgba(24, 28, 27, 0.06);
+}
+
+/* Ghost border */
+.ghost-border {
+  box-shadow: inset 0 0 0 1px rgba(190, 201, 196, 0.15);
+}
+
+/* Glass effect */
+.glass {
+  background: hsla(120, 18%, 97%, 0.8);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+/* Signature gradient */
+.gradient-primary {
+  background: linear-gradient(135deg, hsl(163, 100%, 16%), hsl(163, 100%, 21%));
+}
