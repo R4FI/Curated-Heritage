@@ -12,12 +12,16 @@ import {
 
 interface PersonalInfoProps {
   user: {
+    id: string;
     name: string;
     email: string;
-    memberSince: string;
+    phone?: string;
     avatar: string;
+    memberSince: string;
+    membershipTier?: string;
     totalOrders: number;
     savedItems: number;
+    loyaltyPoints?: number;
   };
   onNavigate: (tab: string) => void;
 }
@@ -55,11 +59,19 @@ const PersonalInfo = ({ user, onNavigate }: PersonalInfoProps) => {
       <div className="bg-surface-container-low rounded-lg p-6 md:p-8">
         <div className="flex flex-col md:flex-row md:items-center gap-6">
           <div className="relative">
-            <img
-              src={user.avatar}
-              alt={user.name}
-              className="w-24 h-24 rounded-lg bg-surface-container-high"
-            />
+            {user.avatar ? (
+              <img
+                src={user.avatar}
+                alt={user.name}
+                className="w-24 h-24 rounded-lg bg-surface-container-high object-cover"
+              />
+            ) : (
+              <div className="w-24 h-24 rounded-lg bg-surface-container-high flex items-center justify-center">
+                <span className="text-4xl font-bold text-primary">
+                  {user.name.charAt(0).toUpperCase()}
+                </span>
+              </div>
+            )}
           </div>
           <div className="flex-1">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
@@ -67,11 +79,17 @@ const PersonalInfo = ({ user, onNavigate }: PersonalInfoProps) => {
                 <h1 className="font-heading text-headline-md text-on-surface mb-1">
                   {user.name}
                 </h1>
-                <p className="font-body text-body-md text-on-surface-variant mb-3">
+                <p className="font-body text-body-md text-on-surface-variant mb-1">
                   {user.email}
                 </p>
+                {user.phone && (
+                  <p className="font-body text-body-md text-on-surface-variant mb-3">
+                    {user.phone}
+                  </p>
+                )}
                 <span className="inline-block font-body text-label-sm px-3 py-1 rounded-full bg-primary/10 text-primary">
-                  MEMBER SINCE {user.memberSince}
+                  {user.membershipTier?.toUpperCase() || "MEMBER"} SINCE{" "}
+                  {new Date(user.memberSince).getFullYear()}
                 </span>
               </div>
               <div className="flex gap-2">

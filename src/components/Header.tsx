@@ -1,6 +1,10 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Search, ShoppingCart, User, Menu, X } from "lucide-react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Search, ShoppingCart, User, Menu, X, LogOut } from "lucide-react";
+import { authStorage } from "@/lib/secureStorage";
+import { authService } from "@/services/authService";
+import toast from "react-hot-toast";
 
 const navLinks = [
   { label: "OFFERS", path: "/shop?filter=offers" },
@@ -12,7 +16,34 @@ const navLinks = [
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const authenticated = authStorage.isAuthenticated();
+      setIsAuthenticated(authenticated);
+      if (authenticated) {
+        const userData = authStorage.getUser();
+        setUser(userData);
+      }
+    };
+    checkAuth();
+  }, [location]);
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+      setIsAuthenticated(false);
+      setUser(null);
+      toast.success("Logged out successfully");
+      navigate("/");
+    } catch (error) {
+      toast.error("Error logging out");
+    }
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass">
@@ -72,13 +103,34 @@ const Header = () => {
                 2
               </span>
             </Link>
-            <Link
-              to="/profile"
-              className="hidden md:flex p-2 rounded-md hover:bg-surface-container-low transition-colors"
-              aria-label="Account"
-            >
-              <User className="w-5 h-5 text-on-surface" />
-            </Link>
+
+            {/* Auth Buttons - Desktop */}
+            <div className="hidden md:flex items-center gap-3">
+              {isAuthenticated && (
+                <>
+                  <Link
+                    to="/profile"
+                    className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-surface-container-low transition-colors"
+                    aria-label="Account"
+                    title={user?.name}
+                  >
+                    <User className="w-5 h-5 text-on-surface" />
+                    <span className="font-body text-label-md text-on-surface max-w-[100px] truncate">
+                      {user?.name?.split(" ")[0]}
+                    </span>
+                  </Link>
+                  {/* <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 px-3 py-2 rounded-md bg-surface-container-high hover:bg-error/10 hover:text-error transition-colors"
+                    aria-label="Logout"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span className="font-body text-label-md">Logout</span>
+                  </button> */}
+                </>
+              )}
+            </div>
+
             <button
               className="md:hidden p-2 rounded-md hover:bg-surface-container-low transition-colors"
               onClick={() => setMobileOpen(!mobileOpen)}
@@ -130,13 +182,31 @@ const Header = () => {
             >
               OUR STORY
             </Link>
-            <Link
-              to="/profile"
-              onClick={() => setMobileOpen(false)}
-              className="font-heading text-title-sm py-2 text-on-surface hover:text-primary transition-colors"
-            >
-              MY ACCOUNT
-            </Link>
+
+            <div className="border-t border-surface-container-high pt-4 mt-2">
+              {isAuthenticated && (
+                <div className="flex flex-col gap-3">
+                  <Link
+                    to="/profile"
+                    onClick={() => setMobileOpen(false)}
+                    className="font-heading text-title-sm py-3 px-2 text-on-surface hover:text-primary hover:bg-surface-container-low transition-colors flex items-center gap-3 rounded-md"
+                  >
+                    <User className="w-5 h-5" />
+                    MY ACCOUNT
+                  </Link>
+                  {/* <button
+                    onClick={() => {
+                      setMobileOpen(false);
+                      handleLogout();
+                    }}
+                    className="font-heading text-title-sm py-3 px-2 text-tertiary hover:text-error hover:bg-surface-container-low transition-colors flex items-center gap-3 text-left rounded-md"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    LOGOUT
+                  </button> */}
+                </div>
+              )}
+            </div>
           </nav>
         </div>
       )}
