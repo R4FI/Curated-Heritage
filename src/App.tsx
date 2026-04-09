@@ -12,6 +12,11 @@ import Profile from "./pages/Profile";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
+import Dashboard from "./pages/admin/Dashboard";
+import Inventory from "./pages/admin/Inventory";
+import Orders from "./pages/admin/Orders";
+import Analytics from "./pages/admin/Analytics";
+import AdminSettings from "./pages/admin/AdminSettings";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +64,14 @@ const App = () => (
           <Route path="/profile" element={<Profile />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+
+          {/* Admin Routes */}
+          <Route path="/admin/dashboard" element={<Dashboard />} />
+          <Route path="/admin/inventory" element={<Inventory />} />
+          <Route path="/admin/orders" element={<Orders />} />
+          <Route path="/admin/analytics" element={<Analytics />} />
+          <Route path="/admin/settings" element={<AdminSettings />} />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
