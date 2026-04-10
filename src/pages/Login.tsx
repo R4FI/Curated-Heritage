@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { authService } from "@/services/authService";
@@ -36,6 +37,7 @@ const Login = () => {
       // Redirect to home or previous page
       navigate("/");
     } catch (error: any) {
+      console.log(error);
       toast.error(
         error.response?.data?.error?.message ||
           "Invalid credentials. Please try again.",

@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   ChevronRight,
   HelpCircle,
+  Home,
 } from "lucide-react";
 import { authStorage } from "@/lib/secureStorage";
 import { authService } from "@/services/authService";
@@ -28,6 +29,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const navigate = useNavigate();
 
   const navItems = [
+    {
+      label: "Home",
+      path: "/",
+      icon: Home,
+    },
     {
       label: "Dashboard",
       path: "/admin/dashboard",

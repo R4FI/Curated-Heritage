@@ -33,6 +33,17 @@ const Header = () => {
     checkAuth();
   }, [location]);
 
+  const handleProfileClick = () => {
+    // Check if user is admin
+    const isAdmin = authStorage.isAdmin();
+
+    if (isAdmin) {
+      navigate("/admin/dashboard");
+    } else {
+      navigate("/profile");
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await authService.logout();
@@ -106,10 +117,10 @@ const Header = () => {
 
             {/* Auth Buttons - Desktop */}
             <div className="hidden md:flex items-center gap-3">
-              {isAuthenticated && (
+              {isAuthenticated ? (
                 <>
-                  <Link
-                    to="/profile"
+                  <button
+                    onClick={handleProfileClick}
                     className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-surface-container-low transition-colors"
                     aria-label="Account"
                     title={user?.name}
@@ -118,16 +129,25 @@ const Header = () => {
                     <span className="font-body text-label-md text-on-surface max-w-[100px] truncate">
                       {user?.name?.split(" ")[0]}
                     </span>
-                  </Link>
-                  {/* <button
+                  </button>
+                  <button
                     onClick={handleLogout}
                     className="flex items-center gap-2 px-3 py-2 rounded-md bg-surface-container-high hover:bg-error/10 hover:text-error transition-colors"
                     aria-label="Logout"
                   >
                     <LogOut className="w-4 h-4" />
                     <span className="font-body text-label-md">Logout</span>
-                  </button> */}
+                  </button>
                 </>
+              ) : (
+                <Link
+                  to="/login"
+                  className="flex items-center gap-2 px-4 py-2 rounded-md gradient-primary text-primary-foreground hover:opacity-90 transition-opacity"
+                >
+                  <span className="font-body text-label-md font-semibold">
+                    Login
+                  </span>
+                </Link>
               )}
             </div>
 
@@ -184,17 +204,19 @@ const Header = () => {
             </Link>
 
             <div className="border-t border-surface-container-high pt-4 mt-2">
-              {isAuthenticated && (
+              {isAuthenticated ? (
                 <div className="flex flex-col gap-3">
-                  <Link
-                    to="/profile"
-                    onClick={() => setMobileOpen(false)}
+                  <button
+                    onClick={() => {
+                      setMobileOpen(false);
+                      handleProfileClick();
+                    }}
                     className="font-heading text-title-sm py-3 px-2 text-on-surface hover:text-primary hover:bg-surface-container-low transition-colors flex items-center gap-3 rounded-md"
                   >
                     <User className="w-5 h-5" />
                     MY ACCOUNT
-                  </Link>
-                  {/* <button
+                  </button>
+                  <button
                     onClick={() => {
                       setMobileOpen(false);
                       handleLogout();
@@ -203,8 +225,16 @@ const Header = () => {
                   >
                     <LogOut className="w-5 h-5" />
                     LOGOUT
-                  </button> */}
+                  </button>
                 </div>
+              ) : (
+                <Link
+                  to="/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="font-heading text-title-sm py-3 px-2 text-primary hover:text-primary-fixed hover:bg-surface-container-low transition-colors flex items-center rounded-md"
+                >
+                  LOGIN
+                </Link>
               )}
             </div>
           </nav>

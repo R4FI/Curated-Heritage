@@ -13,6 +13,7 @@ const ls = new SecureLS({
 interface DecodedToken {
   exp: number;
   userId: string;
+  role?: string;
   [key: string]: any;
 }
 
@@ -155,6 +156,35 @@ export const authStorage = {
    */
   getUser: (): any | null => {
     return secureStorage.get("user");
+  },
+
+  /**
+   * Get user role from JWT token
+   */
+  getUserRole: (): string | null => {
+    try {
+      const token = secureStorage.get("accessToken");
+      if (!token) return null;
+
+      const decoded = jwtDecode<DecodedToken>(token);
+      return decoded.role || null;
+    } catch (error) {
+      console.error("Error getting user role:", error);
+      return null;
+    }
+  },
+
+  /**
+   * Check if user is admin
+   */
+  isAdmin: (): boolean => {
+    try {
+      const role = authStorage.getUserRole();
+      return role === "admin";
+    } catch (error) {
+      console.error("Error checking admin status:", error);
+      return false;
+    }
   },
 
   /**

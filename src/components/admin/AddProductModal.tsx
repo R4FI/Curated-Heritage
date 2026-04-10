@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import {
   X,
@@ -15,18 +16,186 @@ import {
   Link as LinkIcon,
   Lightbulb,
   Palette,
+  Loader2,
 } from "lucide-react";
+import {
+  adminProductService,
+  CreateProductRequest,
+} from "@/services/adminProductService";
+import toast from "react-hot-toast";
 
 interface AddProductModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onProductAdded?: () => void;
 }
 
-const AddProductModal = ({ isOpen, onClose }: AddProductModalProps) => {
-  const [selectedSize, setSelectedSize] = useState("M");
-  const [selectedColor, setSelectedColor] = useState("#005344");
+const AddProductModal = ({
+  isOpen,
+  onClose,
+  onProductAdded,
+}: AddProductModalProps) => {
+  const [loading, setLoading] = useState(false);
   const [onlineStore, setOnlineStore] = useState(true);
   const [pointOfSale, setPointOfSale] = useState(false);
+
+  // Variants state
+  const [sizes, setSizes] = useState<string[]>(["S", "M", "L", "XL"]);
+  const [colors, setColors] = useState<Array<{ name: string; hex: string }>>([
+    { name: "Veridian", hex: "#005344" },
+    { name: "Brown", hex: "#763527" },
+    { name: "White", hex: "#ffffff" },
+  ]);
+  const [newSize, setNewSize] = useState("");
+  const [newColorName, setNewColorName] = useState("");
+  const [newColorHex, setNewColorHex] = useState("#000000");
+
+  // Form state
+  const [formData, setFormData] = useState({
+    name: "",
+    sku: "",
+    description: "",
+    price: "",
+    cost: "",
+    originalPrice: "",
+    category: "",
+    material: "",
+    stock: "0",
+    lowStockThreshold: "10",
+    badge: "",
+    status: "active" as "active" | "inactive" | "draft",
+  });
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Variant handlers
+  const handleAddSize = () => {
+    if (newSize.trim() && !sizes.includes(newSize.trim())) {
+      setSizes([...sizes, newSize.trim()]);
+      setNewSize("");
+    }
+  };
+
+  const handleRemoveSize = (size: string) => {
+    setSizes(sizes.filter((s) => s !== size));
+  };
+
+  const handleAddColor = () => {
+    if (
+      newColorName.trim() &&
+      !colors.find((c) => c.name === newColorName.trim())
+    ) {
+      setColors([...colors, { name: newColorName.trim(), hex: newColorHex }]);
+      setNewColorName("");
+      setNewColorHex("#000000");
+    }
+  };
+
+  const handleRemoveColor = (colorName: string) => {
+    setColors(colors.filter((c) => c.name !== colorName));
+  };
+
+  const handleSubmit = async () => {
+    // Validation
+    if (!formData.name.trim()) {
+      toast.error("Product name is required");
+      return;
+    }
+    if (!formData.sku.trim()) {
+      toast.error("SKU is required");
+      return;
+    }
+    if (!formData.description.trim()) {
+      toast.error("Description is required");
+      return;
+    }
+    if (!formData.price || parseFloat(formData.price) <= 0) {
+      toast.error("Valid price is required");
+      return;
+    }
+    if (!formData.cost || parseFloat(formData.cost) <= 0) {
+      toast.error("Valid cost price is required");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Convert prices from BDT to cents (multiply by 100)
+      const productData: CreateProductRequest = {
+        name: formData.name.trim(),
+        sku: formData.sku.trim(),
+        description: formData.description.trim(),
+        price: Math.round(parseFloat(formData.price) * 100),
+        cost: Math.round(parseFloat(formData.cost) * 100),
+        originalPrice: formData.originalPrice
+          ? Math.round(parseFloat(formData.originalPrice) * 100)
+          : undefined,
+        category: formData.category.trim() || undefined,
+        material: formData.material.trim() || undefined,
+        stock: parseInt(formData.stock) || 0,
+        lowStockThreshold: parseInt(formData.lowStockThreshold) || 10,
+        badge: formData.badge.trim() || undefined,
+        status: formData.status,
+        images: [], // TODO: Implement image upload
+        variants:
+          sizes.length > 0 || colors.length > 0
+            ? {
+                sizes: sizes.length > 0 ? sizes : undefined,
+                colors:
+                  colors.length > 0 ? colors.map((c) => c.name) : undefined,
+              }
+            : undefined,
+      };
+
+      await adminProductService.createProduct(productData);
+      toast.success("Product created successfully!");
+
+      // Reset form
+      setFormData({
+        name: "",
+        sku: "",
+        description: "",
+        price: "",
+        cost: "",
+        originalPrice: "",
+        category: "",
+        material: "",
+        stock: "0",
+        lowStockThreshold: "10",
+        badge: "",
+        status: "active",
+      });
+
+      // Reset variants
+      setSizes(["S", "M", "L", "XL"]);
+      setColors([
+        { name: "Veridian", hex: "#005344" },
+        { name: "Brown", hex: "#763527" },
+        { name: "White", hex: "#ffffff" },
+      ]);
+
+      if (onProductAdded) {
+        onProductAdded();
+      }
+      onClose();
+    } catch (error: any) {
+      console.error("Failed to create product:", error);
+      const errorMessage =
+        error.response?.data?.message || "Failed to create product";
+      if (Array.isArray(errorMessage)) {
+        errorMessage.forEach((msg: string) => toast.error(msg));
+      } else {
+        toast.error(errorMessage);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -56,11 +225,17 @@ const AddProductModal = ({ isOpen, onClose }: AddProductModalProps) => {
                 <button
                   onClick={onClose}
                   className="px-6 py-2.5 rounded-xl text-secondary font-semibold hover:bg-secondary-container/50 transition-colors active:scale-95 duration-200"
+                  disabled={loading}
                 >
                   Discard
                 </button>
-                <button className="px-8 py-2.5 bg-gradient-to-r from-primary to-primary-container text-on-primary rounded-xl font-bold shadow-lg active:scale-95 transition-all duration-200">
-                  Save Product
+                <button
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="px-8 py-2.5 bg-gradient-to-r from-primary to-primary-container text-on-primary rounded-xl font-bold shadow-lg active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {loading ? "Saving..." : "Save Product"}
                 </button>
                 <button
                   onClick={onClose}
@@ -91,9 +266,13 @@ const AddProductModal = ({ isOpen, onClose }: AddProductModalProps) => {
                         Product Title
                       </label>
                       <input
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
                         className="w-full bg-surface-container-high border-none rounded-xl px-4 py-3 focus:ring-1 focus:ring-primary transition-all text-on-surface placeholder:text-outline/50"
                         placeholder="e.g. Hand-Woven Silk Jamdani Saree"
                         type="text"
+                        required
                       />
                     </div>
                     <div>
@@ -105,9 +284,13 @@ const AddProductModal = ({ isOpen, onClose }: AddProductModalProps) => {
                         />
                       </label>
                       <input
+                        name="sku"
+                        value={formData.sku}
+                        onChange={handleInputChange}
                         className="w-full bg-surface-container-high border-none rounded-xl px-4 py-3 focus:ring-1 focus:ring-primary transition-all text-on-surface"
                         placeholder="HB-JAM-001"
                         type="text"
+                        required
                       />
                     </div>
                     <div>
@@ -116,25 +299,85 @@ const AddProductModal = ({ isOpen, onClose }: AddProductModalProps) => {
                       </label>
                       <div className="rounded-xl border border-outline-variant/20 overflow-hidden">
                         <div className="bg-surface-container-low px-4 py-2 flex gap-4 border-b border-outline-variant/20">
-                          <button className="text-on-surface-variant hover:text-primary">
+                          <button
+                            type="button"
+                            className="text-on-surface-variant hover:text-primary"
+                          >
                             <Bold className="w-4 h-4" />
                           </button>
-                          <button className="text-on-surface-variant hover:text-primary">
+                          <button
+                            type="button"
+                            className="text-on-surface-variant hover:text-primary"
+                          >
                             <Italic className="w-4 h-4" />
                           </button>
-                          <button className="text-on-surface-variant hover:text-primary">
+                          <button
+                            type="button"
+                            className="text-on-surface-variant hover:text-primary"
+                          >
                             <List className="w-4 h-4" />
                           </button>
-                          <button className="text-on-surface-variant hover:text-primary">
+                          <button
+                            type="button"
+                            className="text-on-surface-variant hover:text-primary"
+                          >
                             <LinkIcon className="w-4 h-4" />
                           </button>
                         </div>
                         <textarea
+                          name="description"
+                          value={formData.description}
+                          onChange={handleInputChange}
                           className="w-full bg-surface-container-lowest border-none px-4 py-3 focus:ring-0 text-on-surface"
                           placeholder="Describe the craftsmanship and story behind this piece..."
                           rows={6}
+                          required
                         ></textarea>
                       </div>
+                    </div>
+
+                    {/* Additional Fields */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-on-surface-variant mb-2">
+                          Category
+                        </label>
+                        <input
+                          name="category"
+                          value={formData.category}
+                          onChange={handleInputChange}
+                          className="w-full bg-surface-container-high border-none rounded-xl px-4 py-3 focus:ring-1 focus:ring-primary transition-all text-on-surface"
+                          placeholder="e.g. Men's Fashion"
+                          type="text"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-on-surface-variant mb-2">
+                          Material
+                        </label>
+                        <input
+                          name="material"
+                          value={formData.material}
+                          onChange={handleInputChange}
+                          className="w-full bg-surface-container-high border-none rounded-xl px-4 py-3 focus:ring-1 focus:ring-primary transition-all text-on-surface"
+                          placeholder="e.g. 100% Linen"
+                          type="text"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-on-surface-variant mb-2">
+                        Badge (Optional)
+                      </label>
+                      <input
+                        name="badge"
+                        value={formData.badge}
+                        onChange={handleInputChange}
+                        className="w-full bg-surface-container-high border-none rounded-xl px-4 py-3 focus:ring-1 focus:ring-primary transition-all text-on-surface"
+                        placeholder="e.g. New Arrival, Sale"
+                        type="text"
+                      />
                     </div>
                   </div>
                 </section>
@@ -179,71 +422,108 @@ const AddProductModal = ({ isOpen, onClose }: AddProductModalProps) => {
                         Product Variants
                       </h3>
                     </div>
-                    <button className="text-primary text-sm font-bold flex items-center gap-1 hover:underline">
-                      <Plus className="w-4 h-4" /> Add New Variant
-                    </button>
                   </div>
                   <div className="space-y-6">
+                    {/* Sizes */}
                     <div>
                       <label className="block text-sm font-semibold text-on-surface-variant mb-3">
                         Sizes
                       </label>
-                      <div className="flex flex-wrap gap-3">
-                        {["S", "M", "L", "XL"].map((size) => (
-                          <button
+                      <div className="flex flex-wrap gap-3 mb-3">
+                        {sizes.map((size) => (
+                          <div
                             key={size}
-                            onClick={() => setSelectedSize(size)}
-                            className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
-                              selectedSize === size
-                                ? "border border-primary bg-primary text-on-primary"
-                                : "border border-outline-variant/50 hover:bg-secondary-container hover:border-primary"
-                            }`}
+                            className="group relative px-5 py-2 rounded-full text-sm font-medium border border-primary bg-primary/10 text-primary flex items-center gap-2"
                           >
                             {size}
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveSize(size)}
+                              className="hover:text-error transition-colors"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
                         ))}
                       </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newSize}
+                          onChange={(e) => setNewSize(e.target.value)}
+                          onKeyPress={(e) =>
+                            e.key === "Enter" &&
+                            (e.preventDefault(), handleAddSize())
+                          }
+                          placeholder="Add size (e.g., XS, XXL)"
+                          className="flex-1 bg-surface-container-high border-none rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddSize}
+                          className="px-4 py-2 bg-primary text-white rounded-xl hover:opacity-90 transition-opacity flex items-center gap-1"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Add
+                        </button>
+                      </div>
                     </div>
+
+                    {/* Colors */}
                     <div>
                       <label className="block text-sm font-semibold text-on-surface-variant mb-3">
                         Colors
                       </label>
-                      <div className="flex gap-4">
-                        <div className="group relative">
-                          <div
-                            className={`w-10 h-10 rounded-full cursor-pointer ${
-                              selectedColor === "#005344"
-                                ? "ring-2 ring-offset-2 ring-primary"
-                                : "ring-2 ring-offset-2 ring-transparent hover:ring-outline-variant/30"
-                            }`}
-                            style={{ backgroundColor: "#005344" }}
-                            onClick={() => setSelectedColor("#005344")}
-                          ></div>
-                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-primary text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                            Veridian
-                          </span>
+                      <div className="flex flex-wrap gap-4 mb-4">
+                        {colors.map((color) => (
+                          <div key={color.name} className="group relative">
+                            <div
+                              className="w-10 h-10 rounded-full cursor-pointer ring-2 ring-offset-2 ring-primary relative"
+                              style={{ backgroundColor: color.hex }}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveColor(color.name)}
+                                className="absolute -top-1 -right-1 w-5 h-5 bg-error text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                            <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-outline whitespace-nowrap">
+                              {color.name}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="bg-surface-container-low rounded-xl p-4 space-y-3 mt-8">
+                        <p className="text-xs font-semibold text-outline uppercase tracking-wider">
+                          Add New Color
+                        </p>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={newColorName}
+                            onChange={(e) => setNewColorName(e.target.value)}
+                            placeholder="Color name"
+                            className="flex-1 bg-surface-container-high border-none rounded-xl px-4 py-2 focus:ring-1 focus:ring-primary text-sm"
+                          />
+                          <div className="relative">
+                            <input
+                              type="color"
+                              value={newColorHex}
+                              onChange={(e) => setNewColorHex(e.target.value)}
+                              className="w-12 h-10 rounded-xl cursor-pointer border-2 border-outline-variant/30"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleAddColor}
+                            className="px-4 py-2 bg-primary text-white rounded-xl hover:opacity-90 transition-opacity flex items-center gap-1"
+                          >
+                            <Plus className="w-4 h-4" />
+                            Add
+                          </button>
                         </div>
-                        <div
-                          className={`w-10 h-10 rounded-full cursor-pointer ${
-                            selectedColor === "#763527"
-                              ? "ring-2 ring-offset-2 ring-primary"
-                              : "ring-2 ring-offset-2 ring-transparent hover:ring-outline-variant/30"
-                          }`}
-                          style={{ backgroundColor: "#763527" }}
-                          onClick={() => setSelectedColor("#763527")}
-                        ></div>
-                        <div
-                          className={`w-10 h-10 rounded-full border border-outline-variant cursor-pointer ${
-                            selectedColor === "#ffffff"
-                              ? "ring-2 ring-offset-2 ring-primary"
-                              : "ring-2 ring-offset-2 ring-transparent hover:ring-outline-variant/30"
-                          }`}
-                          style={{ backgroundColor: "#ffffff" }}
-                          onClick={() => setSelectedColor("#ffffff")}
-                        ></div>
-                        <button className="w-10 h-10 rounded-full border-2 border-dashed border-outline-variant/30 flex items-center justify-center text-outline hover:text-primary hover:border-primary transition-all">
-                          <Palette className="w-5 h-5" />
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -302,31 +582,63 @@ const AddProductModal = ({ isOpen, onClose }: AddProductModalProps) => {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-xs font-bold text-outline uppercase tracking-wider mb-2">
-                        Price (BDT)
+                        Price (BDT) *
                       </label>
                       <div className="relative">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-primary">
                           ৳
                         </span>
                         <input
+                          name="price"
+                          value={formData.price}
+                          onChange={handleInputChange}
                           className="w-full bg-surface-container-high border-none rounded-xl pl-10 pr-4 py-3 focus:ring-1 focus:ring-primary font-heading font-bold text-lg"
                           placeholder="0.00"
                           type="number"
+                          step="0.01"
+                          min="0"
+                          required
                         />
                       </div>
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-outline uppercase tracking-wider mb-2">
-                        Compare Price
+                        Cost Price (BDT) *
                       </label>
                       <div className="relative">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-outline">
                           ৳
                         </span>
                         <input
+                          name="cost"
+                          value={formData.cost}
+                          onChange={handleInputChange}
+                          className="w-full bg-surface-container-high border-none rounded-xl pl-10 pr-4 py-3 focus:ring-1 focus:ring-primary font-medium"
+                          placeholder="0.00"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-outline uppercase tracking-wider mb-2">
+                        Compare Price (Optional)
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-outline">
+                          ৳
+                        </span>
+                        <input
+                          name="originalPrice"
+                          value={formData.originalPrice}
+                          onChange={handleInputChange}
                           className="w-full bg-surface-container-low border-none rounded-xl pl-10 pr-4 py-3 focus:ring-0 font-medium text-outline"
                           placeholder="0.00"
                           type="number"
+                          step="0.01"
+                          min="0"
                         />
                       </div>
                     </div>
@@ -337,14 +649,30 @@ const AddProductModal = ({ isOpen, onClose }: AddProductModalProps) => {
                       </label>
                       <div className="flex items-center gap-4">
                         <input
+                          name="stock"
+                          value={formData.stock}
+                          onChange={handleInputChange}
                           className="w-24 bg-surface-container-high border-none rounded-xl px-4 py-3 focus:ring-1 focus:ring-primary text-center font-bold"
                           type="number"
-                          defaultValue="1"
+                          min="0"
                         />
                         <span className="text-xs text-outline font-medium">
-                          Units in Warehouse A
+                          Units in Warehouse
                         </span>
                       </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-outline uppercase tracking-wider mb-2">
+                        Low Stock Threshold
+                      </label>
+                      <input
+                        name="lowStockThreshold"
+                        value={formData.lowStockThreshold}
+                        onChange={handleInputChange}
+                        className="w-full bg-surface-container-high border-none rounded-xl px-4 py-3 focus:ring-1 focus:ring-primary text-center font-bold"
+                        type="number"
+                        min="1"
+                      />
                     </div>
                   </div>
                 </section>
